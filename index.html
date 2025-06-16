@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ghaziabad NH9 Cattle Problem - Game</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex; /* Make body a flex container */
+      flex-direction: column; /* Stack children vertically */
+      justify-content: space-between; /* Distribute space between items (pushes footer to bottom) */
+      align-items: center; /* Center items horizontally */
+      min-height: 100vh; /* Ensure body takes full viewport height */
+      margin: 0;
+      background: linear-gradient(135deg, #f0f8ff, #add8e6);
+      color: #333;
+      text-align: center;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 40px 60px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      max-width: 700px;
+      width: 90%;
+      animation: fadeIn 1s ease-out;
+      margin-top: auto; /* Pushes content to the center from the top */
+      margin-bottom: auto; /* Pushes content to the center from the bottom */
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 25px;
+      font-size: 2.5em;
+    }
+
+    p {
+      font-size: 1.1em;
+      line-height: 1.6;
+      margin-bottom: 35px;
+      color: #555;
+    }
+
+    .role-selection {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 18px 35px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1.2em;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      min-width: 200px;
+      cursor: pointer;
+    }
+
+    .button:nth-child(1) {
+      background-color: #3498db;
+      color: #ffffff;
+      border: 2px solid #2980b9;
+    }
+
+    .button:nth-child(1):hover {
+      background-color: #2980b9;
+    }
+
+    .button:nth-child(2) {
+      background-color: #2ecc71;
+      color: #ffffff;
+      border: 2px solid #27ae60;
+    }
+
+    .button:nth-child(2):hover {
+      background-color: #27ae60;
+    }
+
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #modalBox {
+      background-color: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+
+    #passwordInput {
+      padding: 10px;
+      font-size: 1em;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    #submitBtn {
+      padding: 10px 20px;
+      margin-top: 15px;
+      font-size: 1em;
+      background-color: #2ecc71;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+
+    #submitBtn:hover {
+      background-color: #27ae60;
+    }
+
+    .footer {
+      padding: 20px;
+      color: #777;
+      font-size: 0.9em;
+      width: 100%; /* Ensure footer spans full width */
+    }
+
+    .footer a {
+      color: #0077B5; /* LinkedIn blue */
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 30px; }
+      h1 { font-size: 1.8em; }
+      .button { width: 90%; min-width: unset; }
+    }
+  </style>
+
+  <script>
+    function showPasswordPrompt() {
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function submitPassword() {
+      const password = document.getElementById('passwordInput').value;
+      const modal = document.getElementById('modal');
+
+      if (password === "Professor@123") {
+        modal.style.display = 'none';
+        window.location.href = "professor.html";
+      } else {
+        alert("Incorrect password. Access denied.");
+        modal.style.display = 'none';
+        document.getElementById('passwordInput').value = "";
+      }
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        document.getElementById('modal').style.display = 'none';
+        document.getElementById('passwordInput').value = "";
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Welcome to the NH9 Cattle Problem Prompt Engineering Game</h1>
+    <p>This interactive game helps you sharpen your prompt engineering skills by tackling the simulated Ghaziabad NH9 cattle problem.</p>
+
+    <div class="role-selection">
+      <a href="student.html" class="button">I am a Student</a>
+      <div class="button" onclick="showPasswordPrompt()">I am the Professor</div>
+    </div>
+  </div>
+
+  <div id="modal">
+    <div id="modalBox">
+      <p>Please enter your password:</p>
+      <input type="password" id="passwordInput" placeholder="Password" />
+      <br />
+      <button id="submitBtn" onclick="submitPassword()">Submit</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <p>&copy; 2025 Developed by <a href="https://www.linkedin.com/in/dev-kansara-578b27308" target="_blank" rel="noopener noreferrer">Dev Kansara</a>. All rights reserved.</p>
+  </footer>
+</body>
+</html>

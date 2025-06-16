@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student Portal - Prompt Submission</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #e0f7fa, #b3e5fc);
+      color: #333;
+      text-align: center;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 40px 60px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      max-width: 800px;
+      width: 90%;
+      animation: slideIn 0.8s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    h1 {
+      color: #2c3e50;
+      margin-bottom: 20px;
+      font-size: 2.2em;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+    }
+
+    p {
+      font-size: 1.1em;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    label {
+      display: block;
+      font-size: 1.1em;
+      margin: 15px 0 10px;
+      color: #333;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 1em;
+      margin-bottom: 15px;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      transition: border-color 0.3s ease;
+    }
+
+    textarea:focus {
+      border-color: #3498db;
+      outline: none;
+      box-shadow: 0 0 8px rgba(52, 152, 219, 0.4);
+    }
+
+    .button {
+      display: inline-block;
+      padding: 15px 30px;
+      border-radius: 8px;
+      background-color: #28a745;
+      color: #ffffff;
+      font-size: 1.1em;
+      font-weight: bold;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      margin: 10px;
+    }
+
+    .button:hover {
+      background-color: #218838;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .copy-button {
+      background-color: #007bff;
+    }
+
+    .copy-button:hover {
+      background-color: #0056b3;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1em;
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .container { padding: 30px; }
+      h1 { font-size: 1.8em; }
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 20px; }
+      h1 { font-size: 1.5em; }
+      textarea { min-height: 120px; }
+      .button { width: 100%; padding: 12px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Your Challenge: The Ghaziabad NH9 Cattle Problem</h1>
+    <p>Imagine you are given access to a powerful AI model. Your task is to craft a precise and effective prompt that would instruct this AI to solve the problem of cattle straying onto the NH9 highway in Ghaziabad, causing traffic hazards and accidents.</p>
+    <p>Think about the fundamental aspects of the problem, potential data the AI might need, and the desired output. Your prompt should be clear, concise, and comprehensive.</p>
+
+    <form onsubmit="event.preventDefault(); submitPrompt();">
+      <label for="teamIdInput">Enter your Team ID:</label>
+      <input type="text" id="teamIdInput" placeholder="e.g., team5" required />
+
+      <label for="promptInput">Enter your prompt below:</label>
+      <textarea id="promptInput" placeholder="E.g., 'Analyze traffic flow data, cattle movement patterns, and local regulations on NH9 Ghaziabad from 2023-2024...'" required></textarea>
+
+      <button class="button" id="submitButton" type="submit">Submit Prompt</button>
+      <button class="button copy-button" type="button" onclick="copyPrompt()">Copy My Prompt</button>
+    </form>
+
+    <div id="submissionMessage" class="message"></div>
+  </div>
+
+  <script>
+    const teamIdInput = document.getElementById('teamIdInput');
+    const promptBox = document.getElementById('promptInput');
+    const messageElement = document.getElementById('submissionMessage');
+    const submitButton = document.getElementById('submitButton');
+
+    function submitPrompt() {
+      const promptText = promptBox.value.trim();
+      const teamId = teamIdInput.value.trim().toLowerCase();
+
+      if (!teamId) {
+        showMessage('Please enter a valid Team ID before submitting.', '#dc3545');
+        return;
+      }
+
+      if (!promptText) {
+        showMessage('Please enter your prompt before submitting.', '#dc3545');
+        return;
+      }
+
+      const existing = localStorage.getItem(`team_${teamId}_prompt`);
+      if (existing && existing !== promptText) {
+        const confirmOverwrite = confirm("A prompt already exists for this Team ID. Do you want to overwrite it?");
+        if (!confirmOverwrite) return;
+      }
+
+      submitButton.disabled = true;
+      setTimeout(() => submitButton.disabled = false, 2000);
+
+      localStorage.setItem(`team_${teamId}_prompt`, promptText);
+      localStorage.setItem('last_team_id', teamId);
+
+      showMessage('Prompt submitted successfully! The professor will review it.', '#28a745');
+      promptBox.value = '';
+    }
+
+    function copyPrompt() {
+      const prompt = promptBox.value;
+      if (!prompt) {
+        alert("Nothing to copy. Please enter a prompt first.");
+        return;
+      }
+      navigator.clipboard.writeText(prompt)
+        .then(() => alert("Prompt copied to clipboard!"))
+        .catch(err => alert("Copy failed: " + err));
+    }
+
+    function loadSavedPrompt() {
+      const teamId = teamIdInput.value.trim().toLowerCase();
+      if (!teamId) return;
+
+      const savedPrompt = localStorage.getItem(`team_${teamId}_prompt`);
+      if (savedPrompt) {
+        promptBox.value = savedPrompt;
+        showMessage('Your previous prompt has been loaded.', '#007bff', 3000);
+      }
+    }
+
+    function showMessage(msg, color, duration = 5000) {
+      messageElement.style.color = color;
+      messageElement.textContent = msg;
+      messageElement.style.display = 'block';
+      messageElement.style.animation = 'fadeInOut 5s ease-in-out';
+      setTimeout(() => {
+        messageElement.style.display = 'none';
+      }, duration);
+    }
+
+    window.onload = function () {
+      const lastTeamId = localStorage.getItem('last_team_id');
+      if (lastTeamId) {
+        teamIdInput.value = lastTeamId;
+        loadSavedPrompt();
+      }
+
+      teamIdInput.addEventListener('change', loadSavedPrompt);
+    };
+  </script>
+</body>
+</html>

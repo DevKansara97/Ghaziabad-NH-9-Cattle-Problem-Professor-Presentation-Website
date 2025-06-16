@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NH9 Cattle Simulation</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f0f0;
+            /* font-family: Arial, sans-serif; */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Roads and Grass Area Styling */
+        #simulation-container {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            height: 600px;
+            background-color: #68ed68;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+            border: 5px solid #888;
+        }
+
+        .road-main {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            background-color: #444;
+            transform: translateY(-50%);
+            border-top: 5px dashed #fff;
+            border-bottom: 5px dashed #fff;
+            box-sizing: border-box;
+        }
+
+        .road-shoulder-left,
+        .road-shoulder-right {
+            position: absolute;
+            width: 100%;
+            height: 20px;
+            background-color: #666;
+            z-index: 1;
+        }
+
+        .road-shoulder-left {
+            top: calc(50% - 75px - 20px);
+        }
+
+        .road-shoulder-right {
+            top: calc(50% + 75px);
+        }
+
+        .road-junction-1,
+        .road-junction-2 {
+            position: absolute;
+            width: 100px;
+            height: 100%;
+            background-color: #444444;
+            border-left: 3px dashed #fff;
+            border-right: 3px dashed #fff;
+            box-sizing: border-box;
+            z-index: 0;
+        }
+
+        .road-junction-1 {
+            top: 0;
+            left: 20%;
+        }
+
+        .road-junction-2 {
+            bottom: 0;
+            left: 60%;
+        }
+
+        .grass-area {
+            position: absolute;
+            background-color: #4ce64c;
+            z-index: 0;
+        }
+
+        .grass-left {
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(50% - 75px - 20px);
+            background: url('grass.png') repeat;
+            background-size: 50px;
+        }
+
+        .grass-right {
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: calc(50% - 75px - 20px);
+            background: url('grass.png') repeat;
+            background-size: 50px;
+        }
+
+        .cow {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background-image: url('cow.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            cursor: grab;
+            z-index: 10;
+            transition: left 0.5s ease-out, top 0.5s ease-out;
+        }
+
+        .cow.dragging {
+            cursor: grabbing;
+            opacity: 0.8;
+            transition: none;
+        }
+
+        #controlPanel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+        }
+
+        #controlPanel button {
+            margin-right: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: rgb(255, 255, 255);
+            border: none;
+            border-radius: 6px;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+        }
+
+        #controlPanel button:hover {
+            background-color: #384a5e;
+        }
+        
+    </style>
+</head>
+
+<body>
+    <div id="simulation-container">
+        <div class="grass-area grass-left"></div>
+        <div class="grass-area grass-right"></div>
+        <div class="road-main"></div>
+        <div class="road-shoulder-left"></div>
+        <div class="road-shoulder-right"></div>
+        <div class="road-junction-1"></div>
+        <div class="road-junction-2"></div>
+    </div>
+
+    <div id="controlPanel">
+        <button onclick="addCow()">Add Cow</button>
+        <button onclick="removeCow()">Remove Cow</button>
+        <button onclick="resetCows()">Reset</button>
+    </div>
+
+    <script>
+        const container = document.getElementById('simulation-container');
+        const maxCows = 10;
+        let cows = [];
+
+        const initialPositions = [
+            { x: 100, y: 250 },
+            { x: 300, y: 320 },
+            { x: 550, y: 200 },
+            { x: 700, y: 350 },
+            { x: 850, y: 280 },
+            { x: 1000, y: 220 }
+        ];
+
+        const targetPositions = {
+            good: [
+                { x: 50, y: 100 },
+                { x: 250, y: 150 },
+                { x: 500, y: 50 },
+                { x: 650, y: 120 },
+                { x: 800, y: 80 },
+                { x: 950, y: 160 }
+            ],
+            bad: [
+                { x: 120, y: 280 },
+                { x: 330, y: 350 },
+                { x: 570, y: 230 },
+                { x: 720, y: 380 },
+                { x: 870, y: 310 },
+                { x: 1020, y: 250 }
+            ]
+        };
+
+        let cowCount = 0;
+
+        function createCow() {
+            if (cowCount >= maxCows) return;
+            const cow = document.createElement('div');
+            cow.className = 'cow';
+            cow.id = `cow${cowCount + 1}`;
+            const pos = initialPositions[cowCount % initialPositions.length];
+            cow.style.left = `${pos.x}px`;
+            cow.style.top = `${pos.y}px`;
+            enableDragging(cow);
+            container.appendChild(cow);
+            cows.push(cow);
+            cowCount++;
+        }
+
+        function addCow() {
+            createCow();
+        }
+
+        function removeCow() {
+            if (cowCount === 0) return;
+            const lastCow = cows.pop();
+            container.removeChild(lastCow);
+            cowCount--;
+        }
+
+        function enableDragging(cow) {
+            let isDragging = false;
+            let offsetX, offsetY;
+
+            cow.addEventListener('mousedown', e => {
+                isDragging = true;
+                cow.classList.add('dragging');
+                offsetX = e.offsetX;
+                offsetY = e.offsetY;
+            });
+
+            document.addEventListener('mousemove', e => {
+                if (isDragging) {
+                    const rect = container.getBoundingClientRect();
+                    let x = e.clientX - rect.left - offsetX;
+                    let y = e.clientY - rect.top - offsetY;
+                    x = Math.max(0, Math.min(rect.width - cow.offsetWidth, x));
+                    y = Math.max(0, Math.min(rect.height - cow.offsetHeight, y));
+                    cow.style.left = `${x}px`;
+                    cow.style.top = `${y}px`;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    cow.classList.remove('dragging');
+                }
+            });
+        }
+
+        window.resetCows = function () {
+            cows.forEach(cow => container.removeChild(cow));
+            cows = [];
+            cowCount = 0;
+            for (let i = 0; i < 4; i++) createCow();
+        };
+
+        window.onload = () => {
+            resetCows();
+        };
+
+        window.updateCowCount = function (action) {
+            if (action === 'increase') addCow();
+            else if (action === 'decrease') removeCow();
+        };
+
+        window.moveCowForTeam = function (teamId, action) {
+            const index = parseInt(teamId.replace('team', '')) - 1;
+            const cow = document.getElementById(`cow${index + 1}`);
+            if (cow && targetPositions[action][index]) {
+                const pos = targetPositions[action][index];
+                cow.style.left = `${pos.x}px`;
+                cow.style.top = `${pos.y}px`;
+            }
+        };
+
+        window.getCurrentCowCount = () => cowCount;
+
+        window.addCow = addCow;
+        window.removeCow = removeCow;
+    </script>
+</body>
+
+</html>

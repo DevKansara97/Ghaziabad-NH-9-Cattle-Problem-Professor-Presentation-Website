@@ -277,7 +277,7 @@
 
         // Custom modal elements
         const customModal = document.getElementById('customModal');
-        const customModalText = document.getElementById('customModalText'); // Corrected assignment
+        const customModalText = document.getElementById('customModalText');
         const customModalButtons = document.getElementById('customModalButtons');
 
         let db; // Firestore database instance
@@ -572,6 +572,11 @@
 
         // Add event listener for when the team ID input changes
         teamIdInput.addEventListener('change', loadSavedPrompt);
+
+        // Expose functions to the global scope for HTML attributes to call
+        window.submitPrompt = submitPrompt;
+        window.copyPrompt = copyPrompt;
+        window.showCustomModal = showCustomModal; // Also expose this if you want to use it directly from HTML outside the main script
     </script>
 </body>
 </html>

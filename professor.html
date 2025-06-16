@@ -1,4 +1,4 @@
-<!-- ---------------------------------------------------------------------------------------- -->
+<!-- ----------------------------------------------------------------------------------------
 
 <!DOCTYPE html>
 <html lang="en">
@@ -324,6 +324,574 @@
 
     window.onload = loadPrompts;
   </script>
+</body>
+
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Professor Portal - Prompt Evaluation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #e6ffe6, #c8f0c8);
+            color: #333;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: #ffffff;
+            padding: 20px 30px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            font-size: 1.8em;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header button {
+            font-size: 0.6em;
+            padding: 8px 14px;
+            border: none;
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        header button:hover {
+            background-color: #c0392b;
+        }
+
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            padding: 20px;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .prompts-panel,
+        .simulation-panel {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .prompts-panel {
+            flex: 0 0 250px;
+            max-height: 80vh; /* Limit height to enable scroll if many prompts */
+            overflow-y: auto; /* Enable vertical scroll */
+        }
+
+        .simulation-panel {
+            flex: 2;
+            min-width: 500px;
+            position: relative;
+            min-height: 400px;
+        }
+
+        h2 {
+            color: #27ae60;
+            margin: 0 0 20px 0;
+            font-size: 1.7em;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+
+        .team-button {
+            display: block;
+            width: 100%;
+            margin: 8px 0;
+            padding: 12px;
+            border: none;
+            background-color: #3498db;
+            color: white;
+            border-radius: 8px;
+            font-size: 1.05em;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+        }
+
+        .team-button.rated {
+            background-color: #2ecc71; /* Green for rated prompts */
+        }
+
+        .team-button:hover {
+            background-color: #2980b9;
+        }
+
+        .team-button.rated:hover {
+            background-color: #27ae60;
+        }
+
+        .rating-button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 1em;
+            background-color: #f1f1f1;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: bold;
+        }
+
+        .rating-button:hover {
+            background-color: #ddd;
+        }
+
+        .rating-button.selected {
+            background-color: #2ecc71; /* Green for selected rating in modal */
+            color: white;
+        }
+
+        #promptModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        #promptModalContent {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        #promptModalContent h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        #promptText {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            font-size: 1em;
+            margin-bottom: 20px;
+            color: #444;
+        }
+
+        #closeModalBtn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.2em;
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+        }
+
+        #closeModalBtn:hover {
+            color: #333;
+        }
+
+        /* Custom Modal for Alerts and Confirmations - for consistency */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .custom-modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .custom-modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .custom-modal-btn.yes {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .custom-modal-btn.yes:hover {
+            background-color: #218838;
+        }
+
+        .custom-modal-btn.no {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .custom-modal-btn.no:hover {
+            background-color: #c82333;
+        }
+
+        .custom-modal-btn.ok {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .custom-modal-btn.ok:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .prompts-panel,
+            .simulation-panel {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>Professor Dashboard - NH9 Cattle Problem
+        <button onclick="refreshPrompts()">
+            🔄 Clear All Prompts
+        </button>
+    </header>
+
+    <div class="main-content">
+        <div class="prompts-panel">
+            <h2>Team Prompts</h2>
+            <div id="promptsList">
+                <p>Initializing Firebase and loading prompts...</p>
+            </div>
+        </div>
+
+        <div class="simulation-panel">
+            <h2>NH9 Cattle Simulation</h2>
+            <iframe id="simulationIframe" src="simulation.html"
+                style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+        </div>
+    </div>
+
+    <div id="promptModal">
+        <div id="promptModalContent">
+            <button id="closeModalBtn" onclick="closeModal()">✖</button>
+            <h3 id="modalTitle">Team Prompt</h3>
+            <div id="promptText"></div>
+            <div>
+                <label><strong>Rate this Prompt (out of 10):</strong></label>
+                <div id="ratingScale">
+                    <!-- Rating buttons will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Alerts and Confirmations -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <p id="customModalText"></p>
+            <div id="customModalButtons" class="custom-modal-buttons">
+                <!-- Buttons will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, query, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        const promptsList = document.getElementById("promptsList");
+        const promptModal = document.getElementById("promptModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const promptTextDisplay = document.getElementById("promptText");
+        const ratingScale = document.getElementById("ratingScale");
+
+        // Custom modal elements (for consistency in alerts)
+        const customModal = document.getElementById('customModal');
+        const customModalText = document.getElementById('customModalText');
+        const customModalButtons = document.getElementById('customModalButtons');
+
+        let db; // Firestore database instance
+        let auth; // Firebase Auth instance
+        let userId; // Current user ID (though less critical for professor's view)
+        let unsubscribeFromPrompts = null; // To store the unsubscribe function for real-time listener
+
+        /**
+         * Shows a custom alert or confirmation modal, replacing native alert/confirm.
+         * @param {string} message - The message to display in the modal.
+         * @param {'alert'|'confirm'} type - The type of modal: 'alert' for OK button, 'confirm' for Yes/No buttons.
+         * @returns {Promise<boolean>} Resolves to true for 'OK'/'Yes', false for 'No'.
+         */
+        function showCustomModal(message, type) {
+            return new Promise(resolve => {
+                customModalText.textContent = message;
+                customModalButtons.innerHTML = ''; // Clear existing buttons
+
+                if (type === 'alert') {
+                    const okButton = document.createElement('button');
+                    okButton.textContent = 'OK';
+                    okButton.className = 'custom-modal-btn ok';
+                    okButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(true);
+                    };
+                    customModalButtons.appendChild(okButton);
+                } else if (type === 'confirm') {
+                    const yesButton = document.createElement('button');
+                    yesButton.textContent = 'Yes';
+                    yesButton.className = 'custom-modal-btn yes';
+                    yesButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(true);
+                    };
+
+                    const noButton = document.createElement('button');
+                    noButton.textContent = 'No';
+                    noButton.className = 'custom-modal-btn no';
+                    noButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(false);
+                    };
+                    customModalButtons.appendChild(yesButton);
+                    customModalButtons.appendChild(noButton);
+                }
+                customModal.style.display = 'flex'; // Show the modal
+            });
+        }
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         */
+        async function initializeFirebaseAndAuth() {
+            try {
+                // Global variables from Canvas, or hardcoded for Netlify deployment
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                    // YOUR ACTUAL FIREBASE PROJECT CONFIGURATION (MUST MATCH student.html)
+                    apiKey: "AIzaSyBODgdU_1yk9_PvZHxWiY3oo8RuFDuI7DA",
+                    authDomain: "ghaziabad-nh9-cattle-problem.firebaseapp.com",
+                    projectId: "ghaziabad-nh9-cattle-problem",
+                    storageBucket: "ghaziabad-nh9-cattle-problem.firebasestorage.app",
+                    messagingSenderId: "226795420666",
+                    appId: "1:226795420666:web:7d4bdd780f7ff43dfd8243",
+                    measurementId: "G-PDY8Q17Q0K"
+                };
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate user (professor also uses anonymous or custom token)
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase initialized and professor authenticated:", userId);
+                        // Once authenticated, start listening for prompts
+                        setupRealtimePromptListener();
+                    } else {
+                        console.log("No user signed in for professor.");
+                        userId = null;
+                        promptsList.innerHTML = "<p>Please ensure Firebase is configured and you have network access.</p>";
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or authentication:", error);
+                await showCustomModal(`Failed to initialize application: ${error.message}`, 'alert');
+                promptsList.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        }
+
+        /**
+         * Sets up a real-time listener for prompts in Firestore.
+         * Updates the UI whenever there's a change in the prompts collection.
+         */
+        function setupRealtimePromptListener() {
+            if (unsubscribeFromPrompts) {
+                unsubscribeFromPrompts(); // Unsubscribe from previous listener if any
+            }
+
+            const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+            const promptsCollectionRef = collection(db, `artifacts/${currentAppId}/public/data/prompts`);
+            const q = query(promptsCollectionRef); // Get all documents in the collection
+
+            // Listen for real-time updates
+            unsubscribeFromPrompts = onSnapshot(q, (snapshot) => {
+                promptsList.innerHTML = ""; // Clear existing list
+                if (snapshot.empty) {
+                    promptsList.innerHTML = "<p>No prompts submitted yet.</p>";
+                } else {
+                    snapshot.forEach(docSnap => {
+                        const data = docSnap.data();
+                        // Ensure required fields exist
+                        if (data.teamId && data.promptText) {
+                            const btn = document.createElement("button");
+                            btn.textContent = `Team-${data.teamId.replace('team', '')}`; // Display as "Team-1"
+                            btn.className = "team-button";
+
+                            // If a rating exists, display it and change button style
+                            if (data.rating !== null && data.rating !== undefined) {
+                                const ratingDisplay = document.createElement("span");
+                                ratingDisplay.textContent = ` (${data.rating}/10)`;
+                                ratingDisplay.style.marginLeft = '10px';
+                                ratingDisplay.style.fontWeight = 'bold';
+                                btn.appendChild(ratingDisplay);
+                                btn.classList.add('rated'); // Add class for rated style
+                            }
+
+                            btn.onclick = () => showPromptModal(data.teamId, data.promptText, data.rating);
+                            promptsList.appendChild(btn);
+                        }
+                    });
+                }
+            }, (error) => {
+                console.error("Error listening to prompts:", error);
+                promptsList.innerHTML = `<p style="color: red;">Error loading prompts: ${error.message}</p>`;
+                showCustomModal(`Error loading real-time prompts: ${error.message}`, 'alert');
+            });
+        }
+
+        /**
+         * Handles clearing all prompts and ratings from Firestore.
+         */
+        async function refreshPrompts() {
+            const confirmClear = await showCustomModal("Are you sure you want to clear ALL prompts and ratings?", 'confirm');
+            if (!confirmClear) {
+                return;
+            }
+
+            try {
+                const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                const promptsCollectionRef = collection(db, `artifacts/${currentAppId}/public/data/prompts`);
+                const querySnapshot = await getDocs(promptsCollectionRef); // Fetch all documents
+
+                const batch = writeBatch(db); // Use a batch for atomic deletion
+                querySnapshot.docs.forEach((docSnap) => {
+                    batch.delete(docSnap.ref); // Add each document to the batch for deletion
+                });
+                await batch.commit(); // Commit the batch delete
+
+                await showCustomModal("All team prompts and ratings have been cleared!", 'alert');
+                // The onSnapshot listener will automatically update the UI after deletion
+            } catch (error) {
+                console.error("Error clearing prompts:", error);
+                await showCustomModal(`Failed to clear prompts: ${error.message}`, 'alert');
+            }
+        }
+
+        /**
+         * Displays the prompt modal and sets up rating buttons.
+         * @param {string} teamId - The ID of the team (e.g., 'team1').
+         * @param {string} promptTxt - The prompt text to display.
+         * @param {number|null} currentRating - The current rating of the prompt, if any.
+         */
+        function showPromptModal(teamId, promptTxt, currentRating) {
+            modalTitle.textContent = `${teamId.replace('team', 'Team-')}'s Prompt`;
+            promptTextDisplay.textContent = promptTxt;
+
+            ratingScale.innerHTML = ""; // Clear previous rating buttons
+
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement("button");
+                btn.textContent = i;
+                btn.className = "rating-button";
+                if (currentRating !== null && parseInt(currentRating) === i) {
+                    btn.classList.add('selected');
+                }
+
+                btn.onclick = async () => {
+                    const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                    const promptDocRef = doc(db, `artifacts/${currentAppId}/public/data/prompts`, teamId);
+                    try {
+                        // Update the rating field of the existing document
+                        await setDoc(promptDocRef, { rating: i }, { merge: true });
+                        await showCustomModal(`You rated ${teamId.replace('team', 'Team-')}'s prompt: ${i}/10`, 'alert');
+                        closeModal();
+                        // The onSnapshot listener will automatically update the prompt list
+                    } catch (error) {
+                        console.error("Error setting rating:", error);
+                        await showCustomModal(`Failed to set rating: ${error.message}`, 'alert');
+                    }
+                };
+                ratingScale.appendChild(btn);
+            }
+
+            promptModal.style.display = "flex";
+        }
+
+        /**
+         * Closes the prompt modal.
+         */
+        function closeModal() {
+            promptModal.style.display = "none";
+        }
+
+        // Initialize Firebase and Authentication when the script loads
+        initializeFirebaseAndAuth();
+
+        // No need for window.onload for loadPrompts directly as setupRealtimePromptListener
+        // is called after authentication and handles initial load and updates.
+    </script>
 </body>
 
 </html>

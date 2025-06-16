@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -234,4 +234,569 @@
     };
   </script>
 </body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Student Portal - Prompt Submission</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #e0f7fa, #b3e5fc);
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px 60px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            max-width: 800px;
+            width: 90%;
+            animation: slideIn 0.8s ease-out;
+            margin-top: auto;
+            margin-bottom: auto;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 2.2em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        label {
+            display: block;
+            font-size: 1.1em;
+            margin: 15px 0 10px;
+            color: #333;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 15px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.4);
+        }
+
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: #ffffff;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin: 10px;
+        }
+
+        .button:hover {
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .copy-button {
+            background-color: #007bff;
+        }
+
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1em;
+            display: none;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        /* Custom Modal Styles (for confirmation and alerts) */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .custom-modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .custom-modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s ease;
+        }
+
+        .custom-modal-btn.yes {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .custom-modal-btn.yes:hover {
+            background-color: #218838;
+        }
+
+        .custom-modal-btn.no {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .custom-modal-btn.no:hover {
+            background-color: #c82333;
+        }
+
+        .custom-modal-btn.ok {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .custom-modal-btn.ok:hover {
+            background-color: #0056b3;
+        }
+
+        .footer {
+            padding: 20px;
+            color: #777;
+            font-size: 0.9em;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: auto;
+        }
+
+        .footer a {
+            color: #0077B5;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 30px; }
+            h1 { font-size: 1.8em; }
+        }
+
+        @media (max-width: 480px) {
+            .container { padding: 20px; }
+            h1 { font-size: 1.5em; }
+            textarea { min-height: 120px; }
+            .button { width: 100%; padding: 12px 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Challenge: The Ghaziabad NH9 Cattle Problem</h1>
+        <p>Imagine you are given access to a powerful AI model. Your task is to craft a precise and effective prompt that would instruct this AI to solve the problem of cattle straying onto the NH9 highway in Ghaziabad, causing traffic hazards and accidents.</p>
+        <p>Think about the fundamental aspects of the problem, potential data the AI might need, and the desired output. Your prompt should be clear, concise, and comprehensive.</p>
+
+        <form onsubmit="event.preventDefault(); submitPrompt();">
+            <label for="teamIdInput">Enter your Team ID (e.g., team1, team2, ...):</label>
+            <input type="text" id="teamIdInput" placeholder="e.g., team5" required />
+
+            <label for="promptInput">Enter your prompt below:</label>
+            <textarea id="promptInput" placeholder="E.g., 'Analyze traffic flow data, cattle movement patterns, and local regulations on NH9 Ghaziabad from 2023-2024...'" required></textarea>
+
+            <button class="button" id="submitButton" type="submit">Submit Prompt</button>
+            <button class="button copy-button" type="button" onclick="copyPrompt()">Copy My Prompt</button>
+        </form>
+
+        <div id="submissionMessage" class="message"></div>
+    </div>
+
+    <!-- Custom Modal for Alerts and Confirmations -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <p id="customModalText"></p>
+            <div id="customModalButtons" class="custom-modal-buttons">
+                <!-- Buttons will be dynamically added here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2025 Developed by <a href="https://www.linkedin.com/in/dev-kansara-578b27308" target="_blank" rel="noopener noreferrer">Dev Kansara</a>. All rights reserved.</p>
+    </footer>
+
+    <script type="module">
+        // Import Firebase modules - Updated to v11.9.1
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+        const teamIdInput = document.getElementById('teamIdInput');
+        const promptBox = document.getElementById('promptInput');
+        const messageElement = document.getElementById('submissionMessage');
+        const submitButton = document.getElementById('submitButton');
+
+        // Custom modal elements
+        const customModal = document.getElementById('customModal');
+        const customModalText = document.getElementById('customModalText');
+        const customModalButtons = document.getElementById('customModalButtons');
+
+        let db; // Firestore database instance
+        let auth; // Firebase Auth instance
+        let userId; // Current user ID
+
+        /**
+         * Initializes Firebase and authenticates the user.
+         * Uses custom token if available (from Canvas environment), otherwise signs in anonymously.
+         */
+        async function initializeFirebaseAndAuth() {
+            try {
+                // Global variables __app_id, __firebase_config, __initial_auth_token are provided by the Canvas environment.
+                // For Netlify deployment, the hardcoded config below will be used.
+                // It is now YOUR ACTUAL Firebase project configuration.
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem'; // Using your actual Project ID as default
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                    // YOUR ACTUAL FIREBASE PROJECT CONFIGURATION - PASTED FROM YOUR PROVIDED SNIPPET
+                    apiKey: "AIzaSyBODgdU_1yk9_PvZHxWiY3oo8RuFDuI7DA",
+                    authDomain: "ghaziabad-nh9-cattle-problem.firebaseapp.com",
+                    projectId: "ghaziabad-nh9-cattle-problem",
+                    storageBucket: "ghaziabad-nh9-cattle-problem.firebasestorage.app",
+                    messagingSenderId: "226795420666",
+                    appId: "1:226795420666:web:7d4bdd780f7ff43dfd8243",
+                    measurementId: "G-PDY8Q17Q0K" // Optional: include if you use Analytics
+                };
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Authenticate user
+                // On Canvas, __initial_auth_token is provided. On Netlify, we sign in anonymously.
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for auth state changes to get the user ID
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase initialized and user authenticated:", userId);
+                        // Once authenticated, attempt to load saved prompt
+                        loadSavedPromptOnStart();
+                    } else {
+                        console.log("No user signed in.");
+                        userId = null;
+                    }
+                });
+            } catch (error) {
+                console.error("Error initializing Firebase or authentication:", error);
+                await showCustomModal(`Failed to initialize application: ${error.message}`, 'alert');
+            }
+        }
+
+        /**
+         * Shows a custom alert or confirmation modal, replacing native alert/confirm.
+         * @param {string} message - The message to display in the modal.
+         * @param {'alert'|'confirm'} type - The type of modal: 'alert' for OK button, 'confirm' for Yes/No buttons.
+         * @returns {Promise<boolean>} Resolves to true for 'OK'/'Yes', false for 'No'.
+         */
+        function showCustomModal(message, type) {
+            return new Promise(resolve => {
+                customModalText.textContent = message;
+                customModalButtons.innerHTML = ''; // Clear existing buttons
+
+                if (type === 'alert') {
+                    const okButton = document.createElement('button');
+                    okButton.textContent = 'OK';
+                    okButton.className = 'custom-modal-btn ok';
+                    okButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(true);
+                    };
+                    customModalButtons.appendChild(okButton);
+                } else if (type === 'confirm') {
+                    const yesButton = document.createElement('button');
+                    yesButton.textContent = 'Yes';
+                    yesButton.className = 'custom-modal-btn yes';
+                    yesButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(true);
+                    };
+
+                    const noButton = document.createElement('button');
+                    noButton.textContent = 'No';
+                    noButton.className = 'custom-modal-btn no';
+                    noButton.onclick = () => {
+                        customModal.style.display = 'none';
+                        resolve(false);
+                    };
+                    customModalButtons.appendChild(yesButton);
+                    customModalButtons.appendChild(noButton);
+                }
+                customModal.style.display = 'flex'; // Show the modal
+            });
+        }
+
+        /**
+         * Handles prompt submission. Saves the prompt to Firestore.
+         * Includes logic for overwriting existing prompts after confirmation.
+         */
+        async function submitPrompt() {
+            if (!db || !auth.currentUser) {
+                await showCustomModal("Application not ready. Please wait for initialization or refresh.", 'alert');
+                return;
+            }
+
+            const promptText = promptBox.value.trim();
+            const teamId = teamIdInput.value.trim().toLowerCase();
+
+            if (!teamId) {
+                showMessage('Please enter a valid Team ID before submitting.', '#dc3545');
+                return;
+            }
+
+            // Basic validation for team ID format (e.g., team1, team2)
+            if (!/^team[1-6]$/.test(teamId)) {
+                showMessage('Team ID must be in format "team1" to "team6".', '#dc3545');
+                return;
+            }
+
+            if (!promptText) {
+                showMessage('Please enter your prompt before submitting.', '#dc3545');
+                return;
+            }
+
+            try {
+                // Determine the app ID for the Firestore path
+                // This 'ghaziabad-nh9-cattle-problem' should match the 'projectId' in firebaseConfig
+                const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+
+                // Reference to the specific prompt document in Firestore
+                // Path: /artifacts/{appId}/public/data/prompts/{teamId}
+                const promptDocRef = doc(db, `artifacts/${currentAppId}/public/data/prompts`, teamId);
+                const docSnap = await getDoc(promptDocRef);
+
+                let confirmOverwrite = true;
+                if (docSnap.exists()) {
+                    const existingPrompt = docSnap.data().promptText;
+                    if (existingPrompt !== promptText) {
+                        confirmOverwrite = await showCustomModal("A prompt already exists for this Team ID. Do you want to overwrite it?", 'confirm');
+                    } else {
+                        // Same prompt, no need to overwrite or confirm
+                        showMessage('Prompt is already submitted and unchanged.', '#007bff');
+                        return;
+                    }
+                }
+
+                if (!confirmOverwrite) {
+                    showMessage('Prompt submission cancelled.', '#ffc107');
+                    return;
+                }
+
+                submitButton.disabled = true;
+
+                // Save prompt to Firestore.
+                await setDoc(promptDocRef, {
+                    teamId: teamId,
+                    promptText: promptText,
+                    rating: null, // rating is initially null; professor will update this
+                    submittedBy: userId || 'anonymous',
+                    timestamp: new Date() // Add a timestamp for when it was submitted
+                });
+
+                showMessage('Prompt submitted successfully! The professor will review it.', '#28a745');
+                promptBox.value = ''; // Clear the prompt box after submission
+                // Save the last used team ID to localStorage for convenience
+                localStorage.setItem('last_team_id', teamId);
+
+            } catch (error) {
+                console.error("Error submitting prompt:", error);
+                await showCustomModal(`Failed to submit prompt: ${error.message}`, 'alert');
+            } finally {
+                submitButton.disabled = false;
+            }
+        }
+
+        /**
+         * Copies the current prompt text to the clipboard.
+         */
+        async function copyPrompt() {
+            const prompt = promptBox.value;
+            if (!prompt) {
+                await showCustomModal("Nothing to copy. Please enter a prompt first.", 'alert');
+                return;
+            }
+            try {
+                // Using document.execCommand('copy') as navigator.clipboard.writeText() might be restricted in iframes
+                const textarea = document.createElement('textarea');
+                textarea.value = prompt;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                await showCustomModal("Prompt copied to clipboard!", 'alert');
+            } catch (err) {
+                await showCustomModal("Copy failed: " + err, 'alert');
+            }
+        }
+
+        /**
+         * Loads the saved prompt for the currently entered Team ID from Firestore.
+         * This function is triggered when the team ID input changes.
+         */
+        async function loadSavedPrompt() {
+            if (!db || !auth.currentUser) {
+                // If Firebase isn't ready yet, defer
+                return;
+            }
+
+            const teamId = teamIdInput.value.trim().toLowerCase();
+            if (!teamId) {
+                promptBox.value = ''; // Clear prompt if team ID is empty
+                return;
+            }
+
+            // Basic validation for team ID format
+            if (!/^team[1-6]$/.test(teamId)) {
+                // Don't show an error here, as user might be typing.
+                promptBox.value = ''; // Clear prompt if format is incorrect
+                return;
+            }
+
+            try {
+                const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                const promptDocRef = doc(db, `artifacts/${currentAppId}/public/data/prompts`, teamId);
+                const docSnap = await getDoc(promptDocRef);
+
+                if (docSnap.exists()) {
+                    const savedPromptData = docSnap.data();
+                    promptBox.value = savedPromptData.promptText || '';
+                    showMessage('Your previous prompt has been loaded.', '#007bff', 3000);
+                } else {
+                    promptBox.value = ''; // Clear prompt if no saved prompt for this ID
+                    showMessage('No previous prompt found for this Team ID. You can submit a new one.', '#6c757d', 3000);
+                }
+            } catch (error) {
+                console.error("Error loading prompt:", error);
+                showMessage(`Failed to load prompt: ${error.message}`, '#dc3545');
+                promptBox.value = '';
+            }
+        }
+
+        /**
+         * Loads the saved prompt for the last used team ID when the page initially loads.
+         */
+        function loadSavedPromptOnStart() {
+            const lastTeamId = localStorage.getItem('last_team_id');
+            if (lastTeamId) {
+                teamIdInput.value = lastTeamId;
+                loadSavedPrompt(); // Load the prompt for the last used team ID
+            }
+        }
+
+        /**
+         * Displays a temporary message to the user.
+         * @param {string} msg - The message text.
+         * @param {string} color - The text color of the message.
+         * @param {number} duration - How long the message should be visible in milliseconds.
+         */
+        function showMessage(msg, color, duration = 5000) {
+            messageElement.style.color = color;
+            messageElement.textContent = msg;
+            messageElement.style.display = 'block';
+            messageElement.style.animation = `fadeInOut ${duration / 1000}s ease-in-out forwards`;
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+                messageElement.style.animation = '';
+            }, duration);
+        }
+
+        // Initialize Firebase and Auth when the script loads
+        initializeFirebaseAndAuth();
+
+        // Add event listener for when the team ID input changes
+        teamIdInput.addEventListener('change', loadSavedPrompt);
+    </script>
+</body>
 </html>
+

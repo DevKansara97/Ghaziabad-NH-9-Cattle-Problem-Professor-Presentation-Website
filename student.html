@@ -277,8 +277,7 @@
 
         // Custom modal elements
         const customModal = document.getElementById('customModal');
-        // FIX: Corrected typo here, ensuring customModalText is correctly assigned.
-        const customModalText = document.getElementById('customModalText');
+        const customModalText = document.getElementById('customModalText'); // Corrected assignment
         const customModalButtons = document.getElementById('customModalButtons');
 
         let db; // Firestore database instance
@@ -290,50 +289,48 @@
          * Uses custom token if available (from Canvas environment), otherwise signs in anonymously.
          */
         async function initializeFirebaseAndAuth() {
+            console.log("Attempting to initialize Firebase...");
             try {
                 // Global variables __app_id, __firebase_config, __initial_auth_token are provided by the Canvas environment.
                 // For Netlify deployment, the hardcoded config below will be used.
-                // It is now YOUR ACTUAL Firebase project configuration.
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem'; // Using your actual Project ID as default
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
                 const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-                    // YOUR ACTUAL FIREBASE PROJECT CONFIGURATION - PASTED FROM YOUR PROVIDED SNIPPET
                     apiKey: "AIzaSyBODgdU_1yk9_PvZHxWiY3oo8RuFDuI7DA",
                     authDomain: "ghaziabad-nh9-cattle-problem.firebaseapp.com",
                     projectId: "ghaziabad-nh9-cattle-problem",
                     storageBucket: "ghaziabad-nh9-cattle-problem.firebasestorage.app",
                     messagingSenderId: "226795420666",
                     appId: "1:226795420666:web:7d4bdd780f7ff43dfd8243",
-                    measurementId: "G-PDY8Q17Q0K" // Optional: include if you use Analytics
+                    measurementId: "G-PDY8Q17Q0K"
                 };
 
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
+                console.log("Firebase app initialized.");
 
                 // Authenticate user
-                // On Canvas, __initial_auth_token is provided. On Netlify, we sign in anonymously.
                 if (typeof __initial_auth_token !== 'undefined') {
+                    console.log("Signing in with custom token...");
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else {
+                    console.log("Signing in anonymously...");
                     await signInAnonymously(auth);
                 }
 
-                // Listen for auth state changes to get the user ID
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         userId = user.uid;
-                        console.log("Firebase initialized and user authenticated:", userId);
-                        // Once authenticated, attempt to load saved prompt
+                        console.log("Firebase authenticated. User ID:", userId);
                         loadSavedPromptOnStart();
                     } else {
-                        console.log("No user signed in.");
+                        console.log("Firebase: No user signed in.");
                         userId = null;
                     }
                 });
             } catch (error) {
-                console.error("Error initializing Firebase or authentication:", error);
-                // Use the custom modal for errors as well
-                await showCustomModal(`Failed to initialize application: ${error.message}`, 'alert');
+                console.error("CRITICAL ERROR: Firebase initialization failed:", error);
+                await showCustomModal(`Failed to initialize application: ${error.message}. Check console for details.`, 'alert');
             }
         }
 
@@ -385,12 +382,14 @@
          * Includes logic for overwriting existing prompts after confirmation.
          */
         async function submitPrompt() {
+            console.log("Submit button clicked.");
             // Ensure Firebase and current user are ready
             if (!db || !auth || !auth.currentUser) {
+                console.warn("Submit aborted: Firebase not initialized or user not authenticated.");
                 await showCustomModal("Application not ready. Please wait for initialization or refresh.", 'alert');
-                console.error("Firebase not initialized or user not authenticated.");
                 return;
             }
+            console.log("Firebase is ready for submission.");
 
             const promptText = promptBox.value.trim();
             const teamId = teamIdInput.value.trim().toLowerCase();
@@ -412,6 +411,9 @@
             }
 
             try {
+                submitButton.disabled = true; // Disable button during submission
+                console.log(`Attempting to submit prompt for team: ${teamId}`);
+
                 // Determine the app ID for the Firestore path
                 const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
 
@@ -424,9 +426,10 @@
                 if (docSnap.exists()) {
                     const existingPrompt = docSnap.data().promptText;
                     if (existingPrompt !== promptText) {
+                        console.log("Existing prompt found and is different. Asking for confirmation.");
                         confirmOverwrite = await showCustomModal("A prompt already exists for this Team ID. Do you want to overwrite it?", 'confirm');
                     } else {
-                        // Same prompt, no need to overwrite or confirm
+                        console.log("Prompt is unchanged. No submission needed.");
                         showMessage('Prompt is already submitted and unchanged.', '#007bff');
                         return;
                     }
@@ -434,10 +437,9 @@
 
                 if (!confirmOverwrite) {
                     showMessage('Prompt submission cancelled.', '#ffc107');
+                    console.log("Prompt submission cancelled by user.");
                     return;
                 }
-
-                submitButton.disabled = true; // Disable button during submission
 
                 // Save prompt to Firestore.
                 await setDoc(promptDocRef, {
@@ -452,6 +454,7 @@
                 promptBox.value = ''; // Clear the prompt box after submission
                 // Save the last used team ID to localStorage for convenience
                 localStorage.setItem('last_team_id', teamId);
+                console.log("Prompt saved to Firestore and localStorage updated.");
 
             } catch (error) {
                 console.error("Error submitting prompt:", error);
@@ -465,6 +468,7 @@
          * Copies the current prompt text to the clipboard.
          */
         async function copyPrompt() {
+            console.log("Copy button clicked.");
             const prompt = promptBox.value;
             if (!prompt) {
                 await showCustomModal("Nothing to copy. Please enter a prompt first.", 'alert');
@@ -479,9 +483,10 @@
                 document.execCommand('copy');
                 document.body.removeChild(textarea);
                 await showCustomModal("Prompt copied to clipboard!", 'alert');
+                console.log("Prompt copied successfully.");
             } catch (err) {
-                console.error("Error copying prompt:", err); // Log the copy error
-                await showCustomModal("Copy failed: " + err.message, 'alert'); // Display specific error message
+                console.error("Error copying prompt:", err);
+                await showCustomModal("Copy failed: " + err.message, 'alert');
             }
         }
 
@@ -492,6 +497,7 @@
         async function loadSavedPrompt() {
             if (!db || !auth.currentUser) {
                 // If Firebase isn't ready yet, defer
+                console.log("Firebase not ready for loading prompt. Deferring.");
                 return;
             }
 
@@ -503,10 +509,10 @@
 
             // Basic validation for team ID format
             if (!/^team[1-6]$/.test(teamId)) {
-                // Don't show an error here, as user might be typing.
                 promptBox.value = ''; // Clear prompt if format is incorrect
                 return;
             }
+            console.log(`Attempting to load prompt for team: ${teamId}`);
 
             try {
                 const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
@@ -517,9 +523,11 @@
                     const savedPromptData = docSnap.data();
                     promptBox.value = savedPromptData.promptText || '';
                     showMessage('Your previous prompt has been loaded.', '#007bff', 3000);
+                    console.log(`Prompt loaded for team ${teamId}.`);
                 } else {
                     promptBox.value = ''; // Clear prompt if no saved prompt for this ID
                     showMessage('No previous prompt found for this Team ID. You can submit a new one.', '#6c757d', 3000);
+                    console.log(`No prompt found for team ${teamId}.`);
                 }
             } catch (error) {
                 console.error("Error loading prompt:", error);
@@ -535,7 +543,10 @@
             const lastTeamId = localStorage.getItem('last_team_id');
             if (lastTeamId) {
                 teamIdInput.value = lastTeamId;
+                console.log(`Last team ID found: ${lastTeamId}. Attempting to load saved prompt.`);
                 loadSavedPrompt(); // Load the prompt for the last used team ID
+            } else {
+                console.log("No last team ID found in localStorage.");
             }
         }
 

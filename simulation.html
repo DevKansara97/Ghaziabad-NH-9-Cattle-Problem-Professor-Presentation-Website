@@ -1,298 +1,576 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NH9 Cattle Simulation</title>
     <style>
-        body {
+        /* Ensure html and body fill the iframe entirely */
+        html, body {
+            width: 100%;
+            height: 100%;
             margin: 0;
-            overflow: hidden;
-            background-color: #f0f0f0;
-            /* font-family: Arial, sans-serif; */
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            display: flex;
+            overflow: hidden; /* Hide scrollbars */
+            display: flex; /* Use flex to center the container */
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            background-color: #e6f7ff; /* Very light blue body background */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Roads and Grass Area Styling */
         #simulation-container {
             position: relative;
-            width: 90%;
-            max-width: 1200px;
-            height: 600px;
-            background-color: #68ed68;
+            width: 100%; /* Fill the parent iframe's width */
+            height: 100%; /* Fill the parent iframe's height */
+            /* Removed max-width/height here; parent iframe will control dimensions */
+            
+            background-color: #a0d8b3; /* Fallback green for grass background */
+            /* IMPORTANT: Using the provided image 'image_fe185c.png' as background */
+            background-image: url('simulationBackground.png');
+            background-size: cover; /* Make the background image cover the entire container */
+            background-position: center;
+            background-repeat: no-repeat;
             border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-            border: 5px solid #888;
+            overflow: hidden; /* Keep cows within bounds */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            /* Removed temporary border, add back if debugging is needed */
+            /* border: 2px solid #ccc; */
         }
 
-        .road-main {
-            position: absolute;
-            top: 50%;
-            left: 0;
-            width: 100%;
-            height: 150px;
-            background-color: #444;
-            transform: translateY(-50%);
-            border-top: 5px dashed #fff;
-            border-bottom: 5px dashed #fff;
-            box-sizing: border-box;
-        }
-
-        .road-shoulder-left,
-        .road-shoulder-right {
-            position: absolute;
-            width: 100%;
-            height: 20px;
-            background-color: #666;
-            z-index: 1;
-        }
-
-        .road-shoulder-left {
-            top: calc(50% - 75px - 20px);
-        }
-
-        .road-shoulder-right {
-            top: calc(50% + 75px);
-        }
-
-        .road-junction-1,
-        .road-junction-2 {
-            position: absolute;
-            width: 100px;
-            height: 100%;
-            background-color: #444444;
-            border-left: 3px dashed #fff;
-            border-right: 3px dashed #fff;
-            box-sizing: border-box;
-            z-index: 0;
-        }
-
-        .road-junction-1 {
-            top: 0;
-            left: 20%;
-        }
-
-        .road-junction-2 {
-            bottom: 0;
-            left: 60%;
-        }
-
-        .grass-area {
-            position: absolute;
-            background-color: #4ce64c;
-            z-index: 0;
-        }
-
-        .grass-left {
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: calc(50% - 75px - 20px);
-            background: url('grass.png') repeat;
-            background-size: 50px;
-        }
-
-        .grass-right {
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: calc(50% - 75px - 20px);
-            background: url('grass.png') repeat;
-            background-size: 50px;
-        }
-
+        /* Cows container for drag-and-drop */
         .cow {
             position: absolute;
-            width: 80px;
-            height: 80px;
-            background-image: url('cow.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            cursor: grab;
+            width: 80px; /* Width of cow image */
+            height: 80px; /* Height of cow image */
             z-index: 10;
-            transition: left 0.5s ease-out, top 0.5s ease-out;
+            transition: left 0.3s ease-out, top 0.3s ease-out; /* Smooth movement */
+            user-select: none; /* Prevent text selection */
+            display: flex; /* To center the image if needed */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cow.draggable { /* Only apply cursor for draggable cows */
+            cursor: grab;
+        }
+
+        .cow-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ensure image fits within its div */
         }
 
         .cow.dragging {
             cursor: grabbing;
             opacity: 0.8;
-            transition: none;
+            transition: none; /* Disable transition during drag */
         }
 
-        #controlPanel {
+        /* Loading message */
+        #loading-message {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 1.2em;
+            z-index: 5;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 5px;
         }
 
-        #controlPanel button {
-            margin-right: 10px;
-            padding: 10px 15px;
-            font-size: 16px;
-            background-color: #3498db;
-            color: rgb(255, 255, 255);
+        /* Custom Modal Styles (for consistency) */
+        .custom-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .custom-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .custom-modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .custom-modal-btn {
+            padding: 10px 20px;
             border: none;
-            border-radius: 6px;
-            border: 2px solid white;
+            border-radius: 5px;
             cursor: pointer;
+            font-size: 1em;
             transition: background-color 0.3s ease;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-weight: bold;
         }
 
-        #controlPanel button:hover {
-            background-color: #384a5e;
+        .custom-modal-btn.ok {
+            background-color: #007bff;
+            color: white;
         }
-        
+
+        .custom-modal-btn.ok:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
-
 <body>
     <div id="simulation-container">
-        <div class="grass-area grass-left"></div>
-        <div class="grass-area grass-right"></div>
-        <div class="road-main"></div>
-        <div class="road-shoulder-left"></div>
-        <div class="road-shoulder-right"></div>
-        <div class="road-junction-1"></div>
-        <div class="road-junction-2"></div>
+        <div id="loading-message">Loading simulation...</div>
+
+        <!-- Cows (now with img tags for cow.png) -->
+        <div class="cow" data-cow-id="cow1"><img class="cow-image" src="cow1.png" alt="Cow 1"></div>
+        <div class="cow" data-cow-id="cow2"><img class="cow-image" src="cow2.png" alt="Cow 2"></div>
+        <div class="cow" data-cow-id="cow3"><img class="cow-image" src="cow3.png" alt="Cow 3"></div>
     </div>
 
-    <div id="controlPanel">
-        <button onclick="addCow()">Add Cow</button>
-        <button onclick="removeCow()">Remove Cow</button>
-        <button onclick="resetCows()">Reset</button>
+    <!-- Custom Modal for Alerts (for consistency) -->
+    <div id="customModal" class="custom-modal">
+        <div class="custom-modal-content">
+            <p id="customModalText"></p>
+            <div id="customModalButtons" class="custom-modal-buttons">
+                <!-- Buttons will be dynamically added here -->
+            </div>
+        </div>
     </div>
 
-    <script>
-        const container = document.getElementById('simulation-container');
-        const maxCows = 10;
-        let cows = [];
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-        const initialPositions = [
-            { x: 100, y: 250 },
-            { x: 300, y: 320 },
-            { x: 550, y: 200 },
-            { x: 700, y: 350 },
-            { x: 850, y: 280 },
-            { x: 1000, y: 220 }
+        // --- DOM Elements ---
+        const simulationContainer = document.getElementById('simulation-container');
+        const loadingMessage = document.getElementById('loading-message');
+        const cows = document.querySelectorAll('.cow');
+
+        // Custom modal elements
+        const customModal = document.getElementById('customModal');
+        const customModalText = document.getElementById('customModalText');
+        const customModalButtons = document.getElementById('customModalButtons');
+
+        // --- Firebase Variables ---
+        let db;
+        let auth;
+        let userId;
+        let currentTeamId = null; // This will store the team ID for this specific simulation instance
+        let currentRole = 'student'; // Default role is student
+        let unsubscribeCowStateListener = null; // To manage the Firestore listener
+
+        // --- Simulation Constants and Default Positions (adjust these for your background image) ---
+        const COW_WIDTH = 80; // Matches CSS .cow width
+        const COW_HEIGHT = 80; // Matches CSS .cow height
+
+        // Default positions for cows when "Move to Grass" or "Move to Road" is clicked
+        // These are estimated pixel values based on the provided background image (800x450).
+        // YOU WILL LIKELY NEED TO TUNE THESE VALUES AFTER DEPLOYMENT TO MATCH YOUR DESIRED VISUALS.
+        const DEFAULT_GRASS_POSITIONS = {
+            cow1: { x: 100, y: 150 },    // Upper left grass
+            cow2: { x: 370, y: 100 },   // Upper middle grass (between split)
+            cow3: { x: 650, y: 150 }    // Upper right grass
+        };
+
+        const DEFAULT_ROAD_POSITIONS = {
+            cow1: { x: 250, y: 300 },  // Lower left road
+            cow2: { x: 370, y: 320 },  // Lower center road
+            cow3: { x: 490, y: 300 }   // Lower right road
+        };
+
+        // --- Initial Cow Data (for Firestore initialization) ---
+        // Each team will have its own set of cows.
+        // Initially, place them on the road.
+        const INITIAL_COW_DATA = [
+            { id: 'cow1', x: DEFAULT_ROAD_POSITIONS.cow1.x, y: DEFAULT_ROAD_POSITIONS.cow1.y },
+            { id: 'cow2', x: DEFAULT_ROAD_POSITIONS.cow2.x, y: DEFAULT_ROAD_POSITIONS.cow2.y },
+            { id: 'cow3', x: DEFAULT_ROAD_POSITIONS.cow3.x, y: DEFAULT_ROAD_POSITIONS.cow3.y }
         ];
 
-        const targetPositions = {
-            good: [
-                { x: 50, y: 100 },
-                { x: 250, y: 150 },
-                { x: 500, y: 50 },
-                { x: 650, y: 120 },
-                { x: 800, y: 80 },
-                { x: 950, y: 160 }
-            ],
-            bad: [
-                { x: 120, y: 280 },
-                { x: 330, y: 350 },
-                { x: 570, y: 230 },
-                { x: 720, y: 380 },
-                { x: 870, y: 310 },
-                { x: 1020, y: 250 }
-            ]
-        };
+        /**
+         * Shows a custom alert modal.
+         * @param {string} message - The message to display.
+         */
+        function showCustomModal(message) {
+            return new Promise(resolve => {
+                customModalText.textContent = message;
+                customModalButtons.innerHTML = ''; // Clear existing buttons
 
-        let cowCount = 0;
-
-        function createCow() {
-            if (cowCount >= maxCows) return;
-            const cow = document.createElement('div');
-            cow.className = 'cow';
-            cow.id = `cow${cowCount + 1}`;
-            const pos = initialPositions[cowCount % initialPositions.length];
-            cow.style.left = `${pos.x}px`;
-            cow.style.top = `${pos.y}px`;
-            enableDragging(cow);
-            container.appendChild(cow);
-            cows.push(cow);
-            cowCount++;
-        }
-
-        function addCow() {
-            createCow();
-        }
-
-        function removeCow() {
-            if (cowCount === 0) return;
-            const lastCow = cows.pop();
-            container.removeChild(lastCow);
-            cowCount--;
-        }
-
-        function enableDragging(cow) {
-            let isDragging = false;
-            let offsetX, offsetY;
-
-            cow.addEventListener('mousedown', e => {
-                isDragging = true;
-                cow.classList.add('dragging');
-                offsetX = e.offsetX;
-                offsetY = e.offsetY;
+                const okButton = document.createElement('button');
+                okButton.textContent = 'OK';
+                okButton.className = 'custom-modal-btn ok';
+                okButton.onclick = () => {
+                    customModal.style.display = 'none';
+                    resolve(true);
+                };
+                customModalButtons.appendChild(okButton);
+                customModal.style.display = 'flex'; // Show the modal
             });
+        }
 
-            document.addEventListener('mousemove', e => {
-                if (isDragging) {
-                    const rect = container.getBoundingClientRect();
-                    let x = e.clientX - rect.left - offsetX;
-                    let y = e.clientY - rect.top - offsetY;
-                    x = Math.max(0, Math.min(rect.width - cow.offsetWidth, x));
-                    y = Math.max(0, Math.min(rect.height - cow.offsetHeight, y));
-                    cow.style.left = `${x}px`;
-                    cow.style.top = `${y}px`;
+        /**
+         * Initializes Firebase and authenticates the user.
+         * Extracts teamId and role from URL query parameters.
+         */
+        async function initializeFirebaseAndAuth() {
+            console.log("Simulation: Attempting to initialize Firebase...");
+            try {
+                // Get teamId and role from URL query parameter (e.g., simulation.html?teamId=team1&role=professor)
+                const urlParams = new URLSearchParams(window.location.search);
+                currentTeamId = urlParams.get('teamId');
+                currentRole = urlParams.get('role') || 'student'; // Default to 'student' if not specified
+
+                if (!currentTeamId) {
+                    loadingMessage.textContent = "Error: Team ID not provided. Cannot load simulation.";
+                    console.error("Simulation: No teamId found in URL query parameters.");
+                    await showCustomModal("Error: Team ID not provided. Simulation cannot load.");
+                    return;
                 }
-            });
+                console.log(`Simulation: Initializing for Team ID: ${currentTeamId}, Role: ${currentRole}`);
 
-            document.addEventListener('mouseup', () => {
-                if (isDragging) {
-                    isDragging = false;
-                    cow.classList.remove('dragging');
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                    apiKey: "AIzaSyBODgdU_1yk9_PvZHxWiY3oo8RuFDuI7DA",
+                    authDomain: "ghaziabad-nh9-cattle-problem.firebaseapp.com",
+                    projectId: "ghaziabad-nh9-cattle-problem",
+                    storageBucket: "ghaziabad-nh9-cattle-problem.firebasestorage.app",
+                    messagingSenderId: "226795420666",
+                    appId: "1:226795420666:web:7d4bdd780f7ff43dfd8243",
+                    measurementId: "G-PDY8Q17Q0K"
+                };
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                console.log("Simulation: Firebase app initialized.");
+
+                if (typeof __initial_auth_token !== 'undefined') {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
                 }
-            });
-        }
 
-        window.resetCows = function () {
-            cows.forEach(cow => container.removeChild(cow));
-            cows = [];
-            cowCount = 0;
-            for (let i = 0; i < 4; i++) createCow();
-        };
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Simulation: Firebase authenticated. User ID:", userId);
+                        loadingMessage.style.display = 'none'; // Hide loading message
+                        setupCowStateListener(currentTeamId); // Start listening for cow state
+                        initializeCowStatesIfNotExist(currentTeamId); // Ensure initial cow data exists
 
-        window.onload = () => {
-            resetCows();
-        };
+                        // Conditionally enable drag-and-drop based on role
+                        if (currentRole === 'professor') {
+                            enableDragAndDrop();
+                            cows.forEach(cow => cow.classList.add('draggable')); // Add visual cue for draggable
+                        } else {
+                            disableDragAndDrop();
+                            cows.forEach(cow => cow.classList.remove('draggable'));
+                        }
 
-        window.updateCowCount = function (action) {
-            if (action === 'increase') addCow();
-            else if (action === 'decrease') removeCow();
-        };
-
-        window.moveCowForTeam = function (teamId, action) {
-            const index = parseInt(teamId.replace('team', '')) - 1;
-            const cow = document.getElementById(`cow${index + 1}`);
-            if (cow && targetPositions[action][index]) {
-                const pos = targetPositions[action][index];
-                cow.style.left = `${pos.x}px`;
-                cow.style.top = `${pos.y}px`;
+                    } else {
+                        console.log("Simulation: No user signed in.");
+                        loadingMessage.textContent = "Not authenticated. Cannot load simulation.";
+                        userId = null;
+                    }
+                });
+            } catch (error) {
+                console.error("Simulation: CRITICAL ERROR: Firebase initialization failed:", error);
+                loadingMessage.textContent = `Error: ${error.message}`;
+                await showCustomModal(`Failed to initialize simulation: ${error.message}`);
             }
-        };
+        }
 
-        window.getCurrentCowCount = () => cowCount;
+        /**
+         * Sets up a real-time listener for a specific team's cow state in Firestore.
+         * @param {string} teamId - The ID of the team (e.g., 'team1').
+         */
+        function setupCowStateListener(teamId) {
+            if (unsubscribeCowStateListener) {
+                unsubscribeCowStateListener(); // Unsubscribe from previous listener if any
+            }
+            console.log(`Simulation: Setting up real-time listener for cow_states/${teamId}`);
 
-        window.addCow = addCow;
-        window.removeCow = removeCow;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+            const cowStateDocRef = doc(db, `artifacts/${appId}/public/data/cow_states`, teamId);
+
+            unsubscribeCowStateListener = onSnapshot(cowStateDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const cowData = docSnap.data().cows;
+                    console.log("Simulation: Received new cow state:", cowData);
+                    renderCows(cowData); // Update visual positions
+                } else {
+                    console.log(`Simulation: No cow state found for ${teamId}. Initializing...`);
+                    // If document doesn't exist, create it with initial data
+                    initializeCowStatesIfNotExist(teamId);
+                }
+            }, (error) => {
+                console.error("Simulation: Error listening to cow state:", error);
+                loadingMessage.textContent = `Error loading cows: ${error.message}`;
+                showCustomModal(`Error loading cow state: ${error.message}`);
+            });
+        }
+
+        /**
+         * Ensures initial cow data exists for a team in Firestore.
+         * @param {string} teamId - The ID of the team.
+         */
+        async function initializeCowStatesIfNotExist(teamId) {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+            const cowStateDocRef = doc(db, `artifacts/${appId}/public/data/cow_states`, teamId);
+
+            try {
+                const docSnap = await getDoc(cowStateDocRef);
+                if (!docSnap.exists()) {
+                    console.log(`Simulation: Initializing cow state for ${teamId} in Firestore.`);
+                    await setDoc(cowStateDocRef, { cows: INITIAL_COW_DATA });
+                }
+            } catch (error) {
+                console.error(`Simulation: Error initializing cow state for ${teamId}:`, error);
+                showCustomModal(`Error initializing cow state for ${teamId}: ${error.message}`);
+            }
+        }
+
+        /**
+         * Renders (updates positions of) cows based on provided data.
+         * @param {Array<Object>} cowData - An array of cow objects {id: string, x: number, y: number}.
+         */
+        function renderCows(cowData) {
+            const containerRect = simulationContainer.getBoundingClientRect();
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+
+            if (containerWidth === 0 || containerHeight === 0) {
+                console.warn("Simulation container dimensions are 0, cannot render cows accurately yet. Retrying in 100ms.");
+                setTimeout(() => renderCows(cowData), 100);
+                return;
+            }
+
+            cowData.forEach(cowState => {
+                const cowElement = document.querySelector(`.cow[data-cow-id="${cowState.id}"]`);
+                if (cowElement) {
+                    // Ensure positions are within bounds
+                    let x = Math.max(0, Math.min(cowState.x, containerWidth - COW_WIDTH));
+                    let y = Math.max(0, Math.min(cowState.y, containerHeight - COW_HEIGHT));
+
+                    cowElement.style.left = `${x}px`;
+                    cowElement.style.top = `${y}px`;
+                }
+            });
+        }
+
+        /**
+         * Function to update a cow's position in Firestore.
+         * This function will be called by drag-and-drop or parent (professor.html) via postMessage.
+         * @param {string} cowId - The ID of the cow to move (e.g., 'cow1').
+         * @param {number} x - The new X coordinate (in pixels relative to container).
+         * @param {number} y - The new Y coordinate (in pixels relative to container).
+         */
+        async function updateCowPositionInFirestore(cowId, x, y) {
+            if (!db || !currentTeamId) {
+                console.error("Simulation: Firebase or Team ID not ready for update.");
+                await showCustomModal("Simulation not ready to update cow positions.");
+                return;
+            }
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+            const cowStateDocRef = doc(db, `artifacts/${appId}/public/data/cow_states`, currentTeamId);
+
+            try {
+                const docSnap = await getDoc(cowStateDocRef);
+                let currentCows = [];
+                if (docSnap.exists()) {
+                    currentCows = docSnap.data().cows || [];
+                } else {
+                    currentCows = INITIAL_COW_DATA; // Initialize if not found
+                }
+
+                let cowFound = false;
+                const updatedCows = currentCows.map(cow => {
+                    if (cow.id === cowId) {
+                        cowFound = true;
+                        return { ...cow, x: x, y: y };
+                    }
+                    return cow;
+                });
+
+                if (!cowFound) {
+                    console.warn(`Simulation: Cow with ID ${cowId} not found in current state. Adding it.`);
+                    updatedCows.push({ id: cowId, x: x, y: y });
+                }
+
+                await setDoc(cowStateDocRef, { cows: updatedCows });
+                console.log(`Simulation: Cow ${cowId} position updated to (${x}, ${y}) in Firestore for team ${currentTeamId}.`);
+            } catch (error) {
+                console.error("Simulation: Error updating cow position in Firestore:", error);
+                await showCustomModal(`Failed to move cow: ${error.message}`);
+            }
+        }
+
+        // --- Drag and Drop Logic ---
+        let activeCow = null;
+        let xOffset = 0, yOffset = 0;
+
+        function dragStart(e) {
+            if (currentRole !== 'professor') return; // Only professor can drag
+
+            const targetCow = e.target.closest('.cow');
+            if (targetCow) {
+                activeCow = targetCow;
+                activeCow.classList.add('dragging');
+
+                const rect = activeCow.getBoundingClientRect();
+                if (e.type === "touchstart") {
+                    xOffset = e.touches[0].clientX - rect.left;
+                    yOffset = e.touches[0].clientY - rect.top;
+                } else {
+                    xOffset = e.clientX - rect.left;
+                    yOffset = e.clientY - rect.top;
+                }
+            }
+        }
+
+        function drag(e) {
+            if (activeCow) {
+                e.preventDefault(); // Prevent default touch behavior (scrolling)
+
+                const containerRect = simulationContainer.getBoundingClientRect();
+                let clientX, clientY;
+
+                if (e.type === "touchmove") {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                let newX = clientX - containerRect.left - xOffset;
+                let newY = clientY - containerRect.top - yOffset;
+
+                // Keep cow within container bounds
+                newX = Math.max(0, Math.min(newX, containerRect.width - COW_WIDTH));
+                newY = Math.max(0, Math.min(newY, containerRect.height - COW_HEIGHT));
+
+                activeCow.style.left = `${newX}px`;
+                activeCow.style.top = `${newY}px`;
+            }
+        }
+
+        function dragEnd(e) {
+            if (activeCow) {
+                activeCow.classList.remove('dragging');
+                const finalX = parseFloat(activeCow.style.left);
+                const finalY = parseFloat(activeCow.style.top);
+                updateCowPositionInFirestore(activeCow.dataset.cowId, finalX, finalY);
+                activeCow = null;
+            }
+        }
+
+        function enableDragAndDrop() {
+            simulationContainer.addEventListener('mousedown', dragStart);
+            simulationContainer.addEventListener('mousemove', drag);
+            simulationContainer.addEventListener('mouseup', dragEnd);
+            simulationContainer.addEventListener('touchstart', dragStart, { passive: false });
+            simulationContainer.addEventListener('touchmove', drag, { passive: false });
+            simulationContainer.addEventListener('touchend', dragEnd);
+        }
+
+        function disableDragAndDrop() {
+            simulationContainer.removeEventListener('mousedown', dragStart);
+            simulationContainer.removeEventListener('mousemove', drag);
+            simulationContainer.removeEventListener('mouseup', dragEnd);
+            simulationContainer.removeEventListener('touchstart', dragStart);
+            simulationContainer.removeEventListener('touchmove', drag);
+            simulationContainer.removeEventListener('touchend', dragEnd);
+        }
+
+        // --- Event Listeners for Parent Communication ---
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'SET_TEAM_ID') {
+                const newTeamId = event.data.teamId;
+                const newRole = event.data.role || 'student'; // Get role from message
+                if (newTeamId && (newTeamId !== currentTeamId || newRole !== currentRole)) {
+                    currentTeamId = newTeamId;
+                    currentRole = newRole;
+                    console.log(`Simulation: Team ID received from parent: ${currentTeamId}, Role: ${currentRole}`);
+                    loadingMessage.style.display = 'none';
+                    setupCowStateListener(currentTeamId);
+                    initializeCowStatesIfNotExist(currentTeamId);
+
+                    // Conditionally enable/disable drag-and-drop based on role
+                    if (currentRole === 'professor') {
+                        enableDragAndDrop();
+                        cows.forEach(cow => cow.classList.add('draggable'));
+                    } else {
+                        disableDragAndDrop();
+                        cows.forEach(cow => cow.classList.remove('draggable'));
+                    }
+                }
+            } else if (event.data && event.data.type === 'MOVE_COW_COMMAND') {
+                // This command would come from the professor's page to move all cows to predefined positions
+                const targetState = event.data.targetState; // 'on_road' or 'on_grass'
+                let targetPositionsMap = {};
+                if (targetState === 'on_road') {
+                    targetPositionsMap = DEFAULT_ROAD_POSITIONS;
+                } else if (targetState === 'on_grass') {
+                    targetPositionsMap = DEFAULT_GRASS_POSITIONS;
+                } else {
+                    console.warn(`Simulation: Unknown target state for cows: ${targetState}`);
+                    return;
+                }
+
+                cows.forEach(cowElement => {
+                    const cowId = cowElement.dataset.cowId;
+                    const { x, y } = targetPositionsMap[cowId];
+                    updateCowPositionInFirestore(cowId, x, y);
+                });
+            }
+        });
+
+        // Initialize Firebase when the script loads
+        initializeFirebaseAndAuth();
+
+        // Add a resize observer to adjust cow positions if container resizes
+        const resizeObserver = new ResizeObserver(entries => {
+            for (let entry of entries) {
+                if (entry.target === simulationContainer) {
+                    if (db && currentTeamId) {
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'ghaziabad-nh9-cattle-problem';
+                        const cowStateDocRef = doc(db, `artifacts/${appId}/public/data/cow_states`, currentTeamId);
+                        getDoc(cowStateDocRef).then(docSnap => {
+                            if (docSnap.exists()) {
+                                renderCows(docSnap.data().cows || INITIAL_COW_DATA);
+                            } else {
+                                renderCows(INITIAL_COW_DATA);
+                            }
+                        }).catch(error => console.error("Error fetching cow state for resize:", error));
+                    } else {
+                        renderCows(INITIAL_COW_DATA);
+                    }
+                }
+            }
+        });
+        resizeObserver.observe(simulationContainer);
+
+        window.updateCowPositionInFirestore = updateCowPositionInFirestore;
     </script>
 </body>
-
 </html>
